@@ -250,4 +250,4 @@ $$
 *   Wu, J., Yang, S., Zhan, R., Yuan, Y., Chao, L. S., & Wong, D. F. (2025). A survey on LLM-generated text detection: Necessity, methods, and future directions. Computational Linguistics, 1-66.[论文链接](https://direct.mit.edu/coli/article/51/1/275/127462/A-Survey-on-LLM-Generated-Text-Detection-Necessity)
 *   Wu, J., Zhan, R., Wong, D. F., Yang, S., Yang, X., Yuan, Y., & Chao, L. S. (2024). DetectRL: Benchmarking LLM-Generated Text Detection in Real-World Scenarios. In The Thirty-eighth Conference on Neural Information Processing Systems Datasets and Benchmarks Track.[论文链接](https://arxiv.org/pdf/2410.23746)
 
-特别感谢 NLP2CT Lab, University of Macau 组织了本次共享任务，并感谢 Derek, Fai Wong, Junchao Wu, Runzhe Zhan, Yulin Yuan 提供的支持。如有任何问题，请联系 nlp2ct.junchao@gmail.com。
+特别感谢 NLP2CT Lab, University of Macau 组织了本次共享任务，并感谢 Derek, Fai Wong, Junchao Wu, Runzhe Zhan, Yulin Yuan 提供的支持。
