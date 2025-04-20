@@ -236,15 +236,18 @@ $$
    - 这可能是因为学术文本有更严格的格式和表达规范，而社交媒体内容更加自由随意，风格多样化
 
 
-
-## 引用
+## 引用与致谢
 
 *   双目镜方法的灵感来源于:
     Hans, A., Schwarzschild, A., Cherepanova, V., Kazemi, H., Saha, A., Goldblum, M., ... & Goldstein, T. (2024, July). Spotting LLMs With Binoculars: Zero-Shot Detection of Machine-Generated Text. In *International Conference on Machine Learning* (pp. 17519-17537). PMLR.  [论文链接](https://arxiv.org/pdf/2401.12070)
 
 *   使用了 Qwen2.5-7B 和 Qwen2.5-7B-Instruct 模型 (Qwen Team, 2024; Bai et al., 2024):
 
-    *   Qwen Team. (2024, September). Qwen2.5: A Party of Foundation Models. [https://qwenlm.github.io/blog/qwen2.5/](https://qwenlm.github.io/blog/qwen2.5/)
+    *   Qwen Team. (2024, September). Qwen2.5: A Party of Foundation Models. [项目地址](https://qwenlm.github.io/blog/qwen2.5/)
 
     *   Bai, A. Y., Yang, B., Hui, B., Zheng, B., Yu, B., Zhou, C., ... & Fan, Z. (2024). Qwen2 Technical Report. *arXiv preprint arXiv:2407.10671*.[论文链接](https://arxiv.org/pdf/2412.15115)
-    
+
+*   Wu, J., Yang, S., Zhan, R., Yuan, Y., Chao, L. S., & Wong, D. F. (2025). A survey on LLM-generated text detection: Necessity, methods, and future directions. Computational Linguistics, 1-66.[论文链接](https://direct.mit.edu/coli/article/51/1/275/127462/A-Survey-on-LLM-Generated-Text-Detection-Necessity)
+*   Wu, J., Zhan, R., Wong, D. F., Yang, S., Yang, X., Yuan, Y., & Chao, L. S. (2024). DetectRL: Benchmarking LLM-Generated Text Detection in Real-World Scenarios. In The Thirty-eighth Conference on Neural Information Processing Systems Datasets and Benchmarks Track.[论文链接](https://arxiv.org/pdf/2410.23746)
+
+特别感谢 NLP2CT Lab, University of Macau 组织了本次共享任务，并感谢 Derek, Fai Wong, Junchao Wu, Runzhe Zhan, Yulin Yuan 提供的支持。如有任何问题，请联系 nlp2ct.junchao@gmail.com。
