@@ -34,6 +34,7 @@ def predict_on_test(test_file_path, best_log_x, best_threshold, submission_file_
         performer_ppl = item['performer_perplexity']
         cross_ppl = item['cross_perplexity']
         sample_id = item.get('id', None)  # Use .get() to handle missing 'id' gracefully
+        sample_text = item.get('text', '')  # Get the text field
 
         # Handle cases with invalid id
         if sample_id is None:
@@ -50,7 +51,12 @@ def predict_on_test(test_file_path, best_log_x, best_threshold, submission_file_
             print(f"Warning: Denominator close to zero for sample {sample_id}. Assigning a default prediction (0 = Human). Adjust den_epsilon if needed.")
             prediction = 0 # Default: classify as Human
 
-        predictions.append({"id": sample_id, "prediction": prediction})
+        # Add prediction with original text
+        predictions.append({
+            "id": sample_id,
+            "text": sample_text,
+            "label": prediction  # Using "label" instead of "prediction" as required
+        })
 
     # Write the predictions to a JSON file
     try:
@@ -75,3 +81,4 @@ if __name__ == "__main__":
 
     # Run prediction and create submission file
     predict_on_test(args.test_file, best_log_x, best_threshold, args.submission_file)
+    

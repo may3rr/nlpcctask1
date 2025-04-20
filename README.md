@@ -51,7 +51,7 @@ $$
 
 - log_x = 7.4146
 - T = 0.4118
-- 验证集F1分数 = 0.9218
+- 验证集F1分数 = 0.9218🎉🎉
 
 为了进一步优化分类效果，我们对双目镜分数应用更复杂的变换：
 
@@ -132,22 +132,23 @@ $$
 
 2. **特征提取**：使用 `features_extract.py` 计算训练集、开发集和测试集上的双目镜分数
    ```bash
-   python features_extract.py --train_file ./data/train.json --dev_file ./data/dev.json --test_file ./data/test.json --output_dir ./computed_scores
+    python src/features_extract.py --train_file data/train.json --dev_file data/dev.json --test_file data/test.json --output_dir features
    ```
 
 3. **参数优化**：使用 `find_XT.py` 在开发集上寻找最佳的 log_x 和阈值 T 参数
    ```bash
-   python find_XT.py --dev_file dev_scores.json
+    python src/find_XT.py --dev_file features/dev_scores.json --output_params_file best_binoculars_params_optimized_x.json
+
    ```
 
 4. **模型评估**：使用 `evaltrain.py` 评估在训练集和开发集上的模型性能
    ```bash
-   python evaltrain.py --train_scores train_scores.json --dev_scores dev_scores.json --train_original data/train.json --dev_original data/dev.json
+    python src/evaltrain.py --train_scores features/train_scores.json --dev_scores features/dev_scores.json --train_original data/train.json --dev_original data/dev.json
    ```
 
 5. **生成预测结果**：使用优化的参数对测试集进行预测
    ```bash
-    python prediction.py --test_file test_scores.json --submission_file submission.json
+    python src/prediction.py --test_file features/test_scores.json --submission_file submission.json
    ```
 - 使用预先计算的最佳参数（log_x 和阈值 T）对测试集数据进行预测
 - 处理边缘情况（如分母接近零）
@@ -190,10 +191,10 @@ $$
    - glm 和 qwen 模型生成的文本检测率非常高，达到约97%
    - gpt4o 模型生成的文本检测率明显较低，仅为约70%
    - 这表明 gpt4o 生成的文本更接近人类写作特点，更难被检测算法识别
+   - 模型使用qwen-2.5-7B预训练模型和Qwen-2.5-7B- Instruct指令微调模型分别作为观测者和执行者，结果发现模型对于同属于中文模型的glm和qwen模型的分辨效果最佳。
 
 2. **领域分析**：在不同文本领域上的检测性能也存在差异：
    - 学术写作 (csl) 领域检测准确率最高，达到90%以上
    - 新闻写作 (cnewsum) 和社交媒体评论 (asap) 领域的检测准确率较低
    - 这可能是因为学术文本有更严格的格式和表达规范，而社交媒体内容更加自由随意，风格多样化
 
-3. **模型泛化性**：开发集上的F1分数比训练集高，表明模型具有良好的泛化能力，不存在明显的过拟合现象。
