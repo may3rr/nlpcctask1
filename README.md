@@ -1,13 +1,13 @@
 
 # AI 生成内容检测系统
 
-## 项目背景
+## 1. 项目背景
 
 本项目是针对 NLPCC 2025 共享任务1 "大型语言模型生成文本检测" 的解决方案实现。该任务旨在区分大型语言模型生成的中文文本与人工撰写的文本，为应对AI生成内容带来的挑战提供技术支持。
 
 **任务目标**：构建一个高效、鲁棒的AI生成内容检测系统，能够在各种场景下（特别是分布外数据）准确识别AI生成的中文文本。
 
-## 解决方案概述
+## 2. 解决方案概述
 
 本项目采用了双目镜（Binoculars）检测方法，该方法通过比较观察者模型（Observer Model）和执行者模型（Performer Model）的预测分布差异来检测文本是否由AI生成。具体来说：
 
@@ -18,7 +18,7 @@
 **双目镜方法的灵感来源于:** 
 [Hans et al. (2024)](https://arxiv.org/pdf/2401.12070)
 
-### 双目镜方法公式
+### 2.1 双目镜方法公式
 
 双目镜方法的核心公式如下：
 
@@ -55,7 +55,7 @@ $$
 
 - log_x = 7.4146
 - T = 0.4118
-- 验证集F1分数 = 0.9218🎉🎉
+- 验证集F1分数 = 0.8980🎉🎉
 
 为了进一步优化分类效果，我们对双目镜分数应用更复杂的变换：
 
@@ -66,24 +66,26 @@ $$
 其中 `log_x` 是一个可调参数，用于调整交叉困惑度的尺度，使得双目镜分数对噪声更加鲁棒。通过调整 `log_x` 的值，我们可以优化分类性能。项目中使用 `find_XT.py` 脚本自动寻找最佳的 `log_x` 和分类阈值 `T`。为了验证 `log_x` 参数的有效性，我们进行了消融实验，只搜索阈值 `T`，而保持原始的双目镜分数公式不变。实验结果表明，引入 `log_x` 参数并进行优化，可以显著提高 AI 生成文本检测系统的性能。在验证集上，原始方法（搜索 `log_x` 和 `T`）的 F1 分数为 0.8980，而只搜索 `T` 的方法的 F1 分数为 0.8483。
 
 
-## 主要工具和脚本
+## 3. 主要工具和脚本
 
-#### features_extract.py
+#### 3.1 features_extract.py
 
-该文件是项目的核心组件，实现了 `BinocularsComputer` 类，用于计算文本的双目镜分数。主要功能如下：
+该文件是项目的核心组件，实现了 `BinocularsComputer` 类，用于计算文本的双目镜分数。 主要功能如下：
 
-- **模型加载与管理**：按需加载观察者和执行者模型，并实现内存优化
-- **文本处理**：将输入文本转换为tokens并进行批处理
-- **分数计算**：计算perplexity、cross-perplexity和最终的binoculars分数
-- **数据批处理**：支持批处理加速计算过程
-- **结果保存**：将计算结果保存到指定目录
+*   **模型加载与管理**：按需加载观察者和执行者模型，并实现内存优化。 **注意：首次运行时，此过程会使用 `modelscope` 库自动下载 Qwen2.5-7B 和 Qwen2.5-7B-Instruct 模型，预计占用磁盘空间约 30GB。**
+*   **文本处理**：将输入文本转换为 tokens 并进行批处理。
+*   **分数计算**：计算 perplexity、cross-perplexity 和最终的 binoculars 分数。
+*   **数据批处理**：支持批处理加速计算过程。
+*   **结果保存**：将计算结果保存到指定目录。
 
-此外，文件还实现了 `BinocularsPredictor` 类，用于基于预计算的binoculars分数进行分类预测：
-- 自动校准最佳分类阈值
-- 执行预测并评估性能
-- 生成最终提交结果
+此外，文件还实现了 `BinocularsPredictor` 类，用于基于预计算的 binoculars 分数进行分类预测：
 
-#### find_XT.py
+*   自动校准最佳分类阈值。
+*   执行预测并评估性能。
+*   生成最终提交结果。
+
+
+#### 3.2 find_XT.py
 
 该文件用于寻找最优的参数 log_x 和阈值 T，实现了一个参数搜索算法，通过优化以下改进版的双目镜公式来提高分类性能：
 
@@ -109,7 +111,7 @@ $$
 
 这些参数随后用于最终的预测模型，以获得最佳的分类性能。
 
-#### evaltrain.py
+#### 3.3 evaltrain.py
 
 该文件用于评估训练集和开发集上的模型性能，并进行详细的错误分析。主要功能包括：
 
@@ -127,7 +129,7 @@ $$
 
 这些分析结果对于理解模型的优势和局限性，以及指导进一步优化非常有价值。
 
-#### prediction.py
+#### 3.4 prediction.py
 
 该文件用于使用训练好的模型对测试集进行预测，并生成最终的提交文件。主要功能包括：
 
@@ -141,69 +143,87 @@ $$
 - 将预测结果格式化为包含 `id`、`text` 和 `label` 字段的 JSON 格式。
 - 将预测结果保存为提交文件 `submission.json`。
 
-## 使用流程
+## 4. 使用流程
 
 项目的完整使用流程如下：
-1. **预处理数据集**：使用`convert.py`将数据集的text中存在`\n`换行符的数据给清洗掉，因为观察到AI生成的文本中都存在\n,但是test set中的AI文本并没有换行符，担心模型收到这个特征的影响而影响性能。并转换格式为`jsonl`，方便利用Qwen模型进行数值计算。
+
+1. **安装依赖：**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **预处理数据集**：使用`convert.py`将数据集的text中存在`\n`换行符的数据给清洗掉，因为观察到AI生成的文本中都存在\n,但是test set中的AI文本并没有换行符，担心模型收到这个特征的影响而影响性能。并转换格式为`jsonl`，方便利用Qwen模型进行数值计算。
     ```bash
     python src/convert.py --input data/train.json --output data/train.jsonl
     python src/convert.py --input data/dev.json --output data/dev.jsonl
     python src/convert.py --input data/test.json --output data/test.jsonl
     ```
 
-2. **特征提取**：使用 `features_extract.py` 计算训练集、开发集和测试集上的双目镜分数
+3. **特征提取**：使用 `features_extract.py` 计算训练集、开发集和测试集上的双目镜分数
    ```bash
     python src/features_extract.py --train_file data/train.jsonl --dev_file data/dev.jsonl --test_file data/test.jsonl --output_dir features
    ```
 
-3. **参数优化**：使用 `find_XT.py` 在开发集上寻找最佳的 log_x 和阈值 T 参数
+4. **参数优化**：使用 `find_XT.py` 在开发集上寻找最佳的 log_x 和阈值 T 参数
    ```bash
     python src/find_XT.py --dev_file features/dev_scores.json --output_params_file best_binoculars_params_optimized_x.json
    ```
 
-4. **模型评估**：使用 `evaltrain.py` 评估在训练集和开发集上的模型性能
+5. **模型评估**：使用 `evaltrain.py` 评估在训练集和开发集上的模型性能
    ```bash
     python src/evaltrain.py --train_scores features/train_scores.json --dev_scores features/dev_scores.json --train_original data/train.json --dev_original data/dev.json
    ```
 
-5. **生成预测结果**：使用优化的参数对测试集进行预测
+6. **生成预测结果**：使用优化的参数对测试集进行预测
    ```bash
     python src/prediction.py --test_file features/test_scores.json --submission_file submission.json
    ```
-- 使用预先计算的最佳参数（log_x 和阈值 T）对测试集数据进行预测
-- 处理边缘情况（如分母接近零）
-- 将预测结果格式化为官方要求的JSON格式
-- 保存提交文件
+   - 使用预先计算的最佳参数（log_x 和阈值 T）对测试集数据进行预测
+   - 处理边缘情况（如分母接近零）
+   - 将预测结果格式化为官方要求的JSON格式
+   - 保存提交文件
 
-## 实验结果
+## 5. 实验结果
 
 使用最佳参数 log_x = 7.4146 和阈值 T = 0.4118 进行评估，取得了以下性能：
 
-**开发集结果：**
+5.1 **开发集结果：**
 - 准确率 (Accuracy): 0.9036
 - 精确率 (Precision): 0.9022 
 - 召回率 (Recall): 0.8946
 - macro F1分数: 0.8980
 
-**训练集结果：**
+5.2 **训练集结果：**
 - 准确率 (Accuracy): 0.8434
 - 精确率 (Precision): 0.9076
 - 召回率 (Recall): 0.8809
 - macro F1分数: 0.7971
 
-**不同模型的检测性能：**
-| 模型  | 样本数量 | 正确识别 | 检测准确率 | 误检为人类文本 |
-|-------|----------|----------|------------|----------------|
-| glm   | 8063     | 7842     | 0.9726     | 221            |
-| qwen  | 8209     | 7983     | 0.9725     | 226            |
-| gpt4o | 8028     | 5581     | 0.6952     | 2447           |
+5.3  **在`train.json`上评估不同模型和不同来源的分类准确率：**
 
-**不同来源的检测准确率：**
-| 数据来源 | 样本数量 | 准确率   |
-|----------|----------|----------|
-| csl      | 10800    | 0.9036   |
-| cnewsum  | 10800    | 0.8210   |
-| asap     | 10800    | 0.8056   |
+ - **不同模型的检测性能：**
+   | 模型  | 样本数量 | 正确识别 | 检测准确率 | 误检为人类文本 |
+   |-------|----------|----------|------------|----------------|
+   | glm   | 8063     | 7842     | 0.9726     | 221            |
+   | qwen  | 8209     | 7983     | 0.9725     | 226            |
+   | gpt4o | 8028     | 5581     | 0.6952     | 2447           |
+
+ - **不同来源的检测准确率：**
+   | 数据来源 | 样本数量 | 准确率   |
+   |----------|----------|----------|
+   | csl      | 10800    | 0.9036   |
+   | cnewsum  | 10800    | 0.8210   |
+   | asap     | 10800    | 0.8056   |
+
+## 硬件和软件环境
+
+*   **GPU:** A100-SXM4-80GB (80GB) \* 1
+*   **CPU:** 15 vCPU Intel(R) Xeon(R) Platinum 8358P CPU @ 2.60GHz
+*   **内存:** 120GB
+*   **CUDA:** 11.8
+*   **Python:** 3.10 (Ubuntu 22.04)
+*   **PyTorch:** 2.1.2
+*   **依赖:** 详见 `requirements.txt`
 
 ## 结果分析
 
@@ -230,4 +250,4 @@ $$
     *   Qwen Team. (2024, September). Qwen2.5: A Party of Foundation Models. [https://qwenlm.github.io/blog/qwen2.5/](https://qwenlm.github.io/blog/qwen2.5/)
 
     *   Bai, A. Y., Yang, B., Hui, B., Zheng, B., Yu, B., Zhou, C., ... & Fan, Z. (2024). Qwen2 Technical Report. *arXiv preprint arXiv:2407.10671*.[论文链接](https://arxiv.org/pdf/2412.15115)
-
+    

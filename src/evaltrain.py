@@ -85,11 +85,11 @@ def load_json_file(file_path):
 def calculate_metrics(scores, labels, threshold):
     """
     计算分类指标 (Accuracy, Precision, Recall, F1)
-    假设分数小于阈值预测为正类(标签1, AI生成文本)
+    分数小于阈值预测为正类(标签1, AI生成文本)
     """
     predictions = [1 if score < threshold else 0 for score in scores]
 
-    # 假设标签1是正类(AI), 0是负类(Human)
+    # 标签1是正类(AI), 0是负类(Human)
     tp = sum(1 for pred, label in zip(predictions, labels) if pred == 1 and label == 1)
     fp = sum(1 for pred, label in zip(predictions, labels) if pred == 1 and label == 0)
     fn = sum(1 for pred, label in zip(predictions, labels) if pred == 0 and label == 1)
