@@ -1,10 +1,11 @@
+
 # AI 生成内容检测系统
 
 ## 项目背景
 
 本项目是针对 NLPCC 2025 共享任务1 "大型语言模型生成文本检测" 的解决方案实现。该任务旨在区分大型语言模型生成的中文文本与人工撰写的文本，为应对AI生成内容带来的挑战提供技术支持。
 
-**任务目标**：基于双目镜（Binoculars）方法，构建一个高效、鲁棒的AI生成内容检测系统，能够在各种场景下（特别是分布外数据）准确识别AI生成的中文文本。
+**任务目标**：构建一个高效、鲁棒的AI生成内容检测系统，能够在各种场景下（特别是分布外数据）准确识别AI生成的中文文本。
 
 ## 解决方案概述
 
@@ -13,6 +14,9 @@
 1. **观察者模型**：使用基础语言模型（如Qwen2.5-7B）来计算文本的基准困惑度
 2. **执行者模型**：使用指令调优版语言模型（如Qwen2.5-7B-Instruct）来计算文本的执行困惑度
 3. **双目镜分数**：计算执行者困惑度与交叉困惑度的比值，作为检测特征
+
+**双目镜方法的灵感来源于:** 
+[Hans et al. (2024)](https://arxiv.org/pdf/2401.12070)
 
 ### 双目镜方法公式
 
@@ -59,7 +63,8 @@ $$
 B_{\text{modified}}(x) = \frac{\mathrm{PPL}_q(x)}{\log_x - H(p, q, x)}
 $$
 
-其中 log_x 是一个可调参数。通过调整 log_x 的值，我们可以优化分类性能。项目中使用 `find_XT.py` 脚本自动寻找最佳的 log_x 和分类阈值 T。
+其中 `log_x` 是一个可调参数，用于调整交叉困惑度的尺度，使得双目镜分数对噪声更加鲁棒。通过调整 `log_x` 的值，我们可以优化分类性能。项目中使用 `find_XT.py` 脚本自动寻找最佳的 `log_x` 和分类阈值 `T`。为了验证 `log_x` 参数的有效性，我们进行了消融实验，只搜索阈值 `T`，而保持原始的双目镜分数公式不变。实验结果表明，引入 `log_x` 参数并进行优化，可以显著提高 AI 生成文本检测系统的性能。在验证集上，原始方法（搜索 `log_x` 和 `T`）的 F1 分数为 0.8980，而只搜索 `T` 的方法的 F1 分数为 0.8483。
+
 
 ## 主要工具和脚本
 
@@ -93,7 +98,7 @@ $$
 - 根据 F1 分数选择最佳的参数组合
 - 将最佳参数保存到 JSON 文件中
 
-该脚本的运行结果示例：
+该脚本的运行结果：
 ```json
 {
   "best_log_x": 7.414581809045226,
@@ -122,23 +127,38 @@ $$
 
 这些分析结果对于理解模型的优势和局限性，以及指导进一步优化非常有价值。
 
+#### prediction.py
+
+该文件用于使用训练好的模型对测试集进行预测，并生成最终的提交文件。主要功能包括：
+
+- 加载测试集数据和预计算的双目镜分数。
+- 使用预先设定的最佳参数（`log_x = 7.4146` 和阈值 `T = 0.4118`）进行分类预测。
+- 对双目镜分数应用变换公式：
+  $$
+  B_{\text{modified}}(x) = \frac{\mathrm{PPL}_q(x)}{\log_x - H(p, q, x)}
+  $$
+- 处理分母接近零的边缘情况，对该样本默认预测为人类撰写，避免出现 `NaN` 值。
+- 将预测结果格式化为包含 `id`、`text` 和 `label` 字段的 JSON 格式。
+- 将预测结果保存为提交文件 `submission.json`。
+
 ## 使用流程
 
 项目的完整使用流程如下：
 1. **预处理数据集**：使用`convert.py`将数据集的text中存在`\n`换行符的数据给清洗掉，因为观察到AI生成的文本中都存在\n,但是test set中的AI文本并没有换行符，担心模型收到这个特征的影响而影响性能。并转换格式为`jsonl`，方便利用Qwen模型进行数值计算。
     ```bash
-    python process_json.py --input data/train.json --output data/train.jsonl
+    python src/convert.py --input data/train.json --output data/train.jsonl
+    python src/convert.py --input data/dev.json --output data/dev.jsonl
+    python src/convert.py --input data/test.json --output data/test.jsonl
     ```
 
 2. **特征提取**：使用 `features_extract.py` 计算训练集、开发集和测试集上的双目镜分数
    ```bash
-    python src/features_extract.py --train_file data/train.json --dev_file data/dev.json --test_file data/test.json --output_dir features
+    python src/features_extract.py --train_file data/train.jsonl --dev_file data/dev.jsonl --test_file data/test.jsonl --output_dir features
    ```
 
 3. **参数优化**：使用 `find_XT.py` 在开发集上寻找最佳的 log_x 和阈值 T 参数
    ```bash
     python src/find_XT.py --dev_file features/dev_scores.json --output_params_file best_binoculars_params_optimized_x.json
-
    ```
 
 4. **模型评估**：使用 `evaltrain.py` 评估在训练集和开发集上的模型性能
@@ -161,15 +181,15 @@ $$
 
 **开发集结果：**
 - 准确率 (Accuracy): 0.9036
-- 精确率 (Precision): 0.9076 
-- 召回率 (Recall): 0.9365
-- F1分数: 0.9218
+- 精确率 (Precision): 0.9022 
+- 召回率 (Recall): 0.8946
+- macro F1分数: 0.8980
 
 **训练集结果：**
 - 准确率 (Accuracy): 0.8434
 - 精确率 (Precision): 0.9076
 - 召回率 (Recall): 0.8809
-- F1分数: 0.8941
+- macro F1分数: 0.7971
 
 **不同模型的检测性能：**
 | 模型  | 样本数量 | 正确识别 | 检测准确率 | 误检为人类文本 |
@@ -191,10 +211,23 @@ $$
    - glm 和 qwen 模型生成的文本检测率非常高，达到约97%
    - gpt4o 模型生成的文本检测率明显较低，仅为约70%
    - 这表明 gpt4o 生成的文本更接近人类写作特点，更难被检测算法识别
-   - 模型使用qwen-2.5-7B预训练模型和Qwen-2.5-7B- Instruct指令微调模型分别作为观测者和执行者，结果发现模型对于同属于中文模型的glm和qwen模型的分辨效果最佳。
+   - 模型使用Qwen2.5-7B (Bai et al., 2024)预训练模型和Qwen2.5-7B- Instruct (Qwen Team, 2024)指令微调模型分别作为观测者和执行者，结果发现模型对于同属于中文模型的glm和qwen模型的分辨效果最佳。
 
 2. **领域分析**：在不同文本领域上的检测性能也存在差异：
    - 学术写作 (csl) 领域检测准确率最高，达到90%以上
    - 新闻写作 (cnewsum) 和社交媒体评论 (asap) 领域的检测准确率较低
    - 这可能是因为学术文本有更严格的格式和表达规范，而社交媒体内容更加自由随意，风格多样化
+
+
+
+## 引用
+
+*   双目镜方法的灵感来源于:
+    Hans, A., Schwarzschild, A., Cherepanova, V., Kazemi, H., Saha, A., Goldblum, M., ... & Goldstein, T. (2024, July). Spotting LLMs With Binoculars: Zero-Shot Detection of Machine-Generated Text. In *International Conference on Machine Learning* (pp. 17519-17537). PMLR.  [论文链接](https://arxiv.org/pdf/2401.12070)
+
+*   使用了 Qwen2.5-7B 和 Qwen2.5-7B-Instruct 模型 (Qwen Team, 2024; Bai et al., 2024):
+
+    *   Qwen Team. (2024, September). Qwen2.5: A Party of Foundation Models. [https://qwenlm.github.io/blog/qwen2.5/](https://qwenlm.github.io/blog/qwen2.5/)
+
+    *   Bai, A. Y., Yang, B., Hui, B., Zheng, B., Yu, B., Zhou, C., ... & Fan, Z. (2024). Qwen2 Technical Report. *arXiv preprint arXiv:2407.10671*.[论文链接](https://arxiv.org/pdf/2412.15115)
 
